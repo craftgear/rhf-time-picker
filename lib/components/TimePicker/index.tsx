@@ -12,26 +12,50 @@ import styles from "./styles.module.css";
 type Props = {
   defaultValue: string;
   onChange: (time: string) => void;
+  onBlur: (time: string) => void;
+  name: string;
+  okButtonText?: string;
   hourRange?: number[];
   showClockIcon?: boolean;
   minStep?: number;
+  style?: React.CSSProperties;
+  className?: string;
+  popupClassName?: string;
+  selectClassName?: string;
+  okButtonClassName?: string;
+  selectedOptionClassName?: string;
 } & InputHTMLAttributes<HTMLInputElement>;
 
-const HOURS = [...Array(24).keys()].filter((x: number) => x >= 6 && x <= 22);
-const MINUTES = [...Array(60).keys()].filter((x: number) => x % 5 === 0);
+const HOURS = [...Array(24).keys()];
+const MINUTES = [...Array(60).keys()];
 const TIME_PICKER_CLASS = "time-picker";
 
 export const TimePicker = forwardRef(
-  (props: Props, ref: React.Ref<HTMLInputElement>) => {
-    const {
+  (
+    {
       defaultValue,
       onChange,
+      onBlur,
+      name,
+      okButtonText = "OK",
       hourRange = HOURS,
-      minuteRange = MINUTES,
+      minStep = 5,
+      showClockIcon = true,
+      className,
+      popupClassName,
+      selectClassName,
+      okButtonClassName,
+      selectedOptionClassName,
       ...restProps
-    } = props;
+    }: Props,
+    ref: React.Ref<HTMLInputElement>,
+  ) => {
     const popupRef = useRef<HTMLDivElement>(null);
     const [hour, minute] = defaultValue.split(":").map((x) => parseInt(x, 10));
+
+    const minRange = minStep
+      ? MINUTES.filter((x) => x % minStep === 0)
+      : MINUTES;
 
     const [isPopupOpen, setIsPopupOpen] = useState(true);
     const [selectedHour, setSelectedHour] = useState(hour);
@@ -45,6 +69,7 @@ export const TimePicker = forwardRef(
 
     return (
       <div
+        role="combobox"
         className={`${styles["time-picker"]} ${TIME_PICKER_CLASS}`}
         tabIndex={0}
         onFocus={() => setIsPopupOpen(true)}
@@ -60,47 +85,71 @@ export const TimePicker = forwardRef(
           style={{ display: "none" }}
           ref={ref}
           value={`${selectedHour}:${selectedMinute}`}
+          // rhf props
+          name={name}
           onChange={onChange}
+          onBlur={onBlur}
         />
         <div
-          className={`${styles.display} ${isPopupOpen ? styles.hide : ""} `}
+          role="time"
+          className={`${styles.display} ${isPopupOpen ? styles.hide : ""}  ${className}`}
           onClick={() => {
             setIsPopupOpen(true);
           }}
         >
-          <span>
+          <span aria-label="selected hour and minute">
             {` ${selectedHour}`.slice(-2)}:{`0${selectedMinute}`.slice(-2)}
           </span>
-          <FaRegClock />
+          {showClockIcon && <FaRegClock />}
         </div>
         {isPopupOpen && (
           <Popup
             setIsPopupOpen={setIsPopupOpen}
             ref={popupRef}
-            onBlur={() => {
-              setIsPopupOpen(false);
-            }}
+            className={popupClassName}
           >
-            <Selector
-              name="hour"
-              optionValues={hourRange}
-              selectedValue={selectedHour}
-              setSelectedValue={(hour) => {
-                setSelectedHour(hour);
-                setSelectedTime(hour, selectedMinute);
+            <div className={`${styles.selectorWrapper}`}>
+              <Select
+                className={selectClassName}
+                selectedOptionClassName={selectedOptionClassName}
+                name="hour"
+                optionValues={hourRange}
+                selectedValue={selectedHour}
+                setSelectedValue={(hour) => {
+                  setSelectedHour(hour);
+                  setSelectedTime(hour, selectedMinute);
+                }}
+                getFocus={true}
+              />
+              <Select
+                className={selectClassName}
+                selectedOptionClassName={selectedOptionClassName}
+                name="minute"
+                optionValues={minRange}
+                selectedValue={selectedMinute}
+                setSelectedValue={(minute) => {
+                  setSelectedMinute(minute);
+                  setSelectedTime(selectedHour, minute);
+                }}
+                getFocus={false}
+              />
+            </div>
+            <button
+              type="button"
+              aria-label="confirm selected hour and minute"
+              className={
+                okButtonClassName ? okButtonClassName : styles.okButton
+              }
+              tabIndex={0}
+              onClick={() => {
+                setIsPopupOpen(false);
               }}
-              getFocus={true}
-            />
-            <Selector
-              name="minute"
-              optionValues={minuteRange}
-              selectedValue={selectedMinute}
-              setSelectedValue={(minute) => {
-                setSelectedMinute(minute);
-                setSelectedTime(selectedHour, minute);
+              onBlur={() => {
+                setIsPopupOpen(false);
               }}
-              getFocus={false}
-            />
+            >
+              {okButtonText}
+            </button>
           </Popup>
         )}
       </div>
@@ -110,11 +159,11 @@ export const TimePicker = forwardRef(
 
 type PopupProps = PropsWithChildren<{
   setIsPopupOpen: (x: boolean) => void;
-  onBlur?: () => void;
+  className?: string;
 }>;
 
 const Popup = forwardRef<HTMLDivElement, PopupProps>(
-  ({ setIsPopupOpen, onBlur, children }: PopupProps, ref) => {
+  ({ setIsPopupOpen, className, children }: PopupProps, ref) => {
     useEffect(() => {
       const handleClick = (e: Event) => {
         if (e.target instanceof HTMLElement) {
@@ -134,17 +183,11 @@ const Popup = forwardRef<HTMLDivElement, PopupProps>(
     }, [setIsPopupOpen]);
 
     return (
-      <div ref={ref} className={`${styles.popup}`}>
-        <div className={`${styles.selectorWrapper}`}>{children}</div>
-        <button
-          type="button"
-          className={`${styles.okButton}`}
-          tabIndex={0}
-          onClick={onBlur}
-          onBlur={onBlur}
-        >
-          OK
-        </button>
+      <div
+        ref={ref}
+        className={`${styles.popup} ${className ? className : ""}`}
+      >
+        {children}
       </div>
     );
   },
@@ -156,10 +199,14 @@ type SelectorProps = {
   selectedValue: number;
   setSelectedValue: (value: number) => void;
   getFocus: boolean;
+  className?: string;
+  selectedOptionClassName?: string;
 };
 
-const Selector = ({
+const Select = ({
   name,
+  className,
+  selectedOptionClassName,
   optionValues,
   selectedValue,
   setSelectedValue,
@@ -170,7 +217,7 @@ const Selector = ({
 
   useEffect(() => {
     if (selectedRef.current) {
-      selectedRef.current.scrollIntoView({ block: "center" });
+      selectedRef.current.scrollIntoView();
     }
     if (getFocus) {
       ref.current?.focus();
@@ -180,18 +227,43 @@ const Selector = ({
   return (
     <div
       ref={ref}
-      className={`${styles.selector}`}
+      role="spinbutton"
+      aria-label={name}
+      className={`${styles.selector} ${className ? className : ""}`}
       onMouseEnter={() => {
         if (ref.current) {
           ref.current.focus();
         }
       }}
       tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === "Up" || e.key === "ArrowUp") {
+          const prevValue =
+            optionValues[optionValues.indexOf(selectedValue) - 1];
+          if (prevValue === undefined) {
+            return;
+          }
+          setSelectedValue(prevValue);
+          return;
+        }
+        if (e.key === "Down" || e.key === "ArrowDown") {
+          const nextValue =
+            optionValues[optionValues.indexOf(selectedValue) + 1];
+          if (nextValue === undefined) {
+            return;
+          }
+          setSelectedValue(nextValue);
+          return;
+        }
+      }}
     >
       {optionValues.map((x) => (
         <option
           key={`${name}-${x}`}
-          className={`${styles.option} ${selectedValue === x ? styles["selected-option"] : ""}`}
+          role="option"
+          aria-label={`${x} ${name}`}
+          aria-selected={`${selectedValue === x}`}
+          className={`${styles.option} ${selectedValue === x ? (selectedOptionClassName ? selectedOptionClassName : styles["selected-option"]) : ""}`}
           value={x}
           onClick={(e) => {
             e.preventDefault();

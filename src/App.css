@@ -40,3 +40,13 @@
 .read-the-docs {
   color: #888;
 }
+
+.white {
+  background-color: white;
+  color: black;
+}
+
+.okButton {
+  color: red;
+  padding: 0.1rem;
+}
