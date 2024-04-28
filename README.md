@@ -38,7 +38,7 @@ const App = () => {
 };
 ```
 
-### Can I just use `{...register('time')}` like normal input elements?
+## Can I just use `{...register('time')}` like normal input elements?
  
 Unfortunately no.
 
@@ -47,7 +47,7 @@ Except for using `input._valueTracker?.setValue()` which I'd like to avoid using
 
 So I resorted to using `setValue` function from `react-hook-form` to set the value.
 
-### Props
+## Props
 
 Name                    | Type                                  | Default   | Desscription
 ---                     | ---                                   | ---       | ---
