@@ -1,35 +1,36 @@
 import {
   useState,
   useEffect,
-  useLayoutEffect,
   useRef,
   PropsWithChildren,
-  InputHTMLAttributes,
+  KeyboardEvent,
+  MouseEvent,
 } from "react";
 
 import { FaRegClock } from "react-icons/fa6";
 import styles from "./styles.module.css";
 
+const HOURS = [...Array(24).keys()];
+const MINUTES = [...Array(60).keys()];
+const TIME_PICKER_CLASS = "time-picker";
+
 export type TimePickerProps = {
-  defaultValue: string;
-  okButtonText?: string;
+  /* rhf props */
+  name: string;
+  setValue: (name: string, value: string) => void;
+  /* rhf props end */
+  defaultValue?: string;
   hourRange?: number[];
-  showClockIcon?: boolean;
   minStep?: number;
+  okButtonText?: string;
+  showClockIcon?: boolean;
   style?: React.CSSProperties;
   className?: string;
   popupClassName?: string;
   selectClassName?: string;
   okButtonClassName?: string;
   selectedOptionClassName?: string;
-  /* rhf props */
-  name: string;
-  setValue: (name: string, value: string) => void;
-} & InputHTMLAttributes<HTMLInputElement>;
-
-const HOURS = [...Array(24).keys()];
-const MINUTES = [...Array(60).keys()];
-const TIME_PICKER_CLASS = "time-picker";
+};
 
 export const TimePicker = ({
   // rhf props
@@ -37,10 +38,11 @@ export const TimePicker = ({
   setValue,
   // rhf props end
   defaultValue,
-  okButtonText = "OK",
   hourRange = HOURS,
   minStep = 5,
+  okButtonText = "OK",
   showClockIcon = true,
+  style = {},
   className,
   popupClassName,
   selectClassName,
@@ -51,17 +53,36 @@ export const TimePicker = ({
   const [hour, minute] = (defaultValue ?? new Date().toTimeString().slice(0, 5))
     .split(":")
     .map((x) => parseInt(x, 10));
-
+  const defaultHour = calcDefaultHour(hour, hourRange);
+  const defaultMinute = calcDefaultMinute(minute, minStep);
   const minRange = minStep ? MINUTES.filter((x) => x % minStep === 0) : MINUTES;
 
-  const [isPopupOpen, setIsPopupOpen] = useState(true);
-  const [selectedHour, setSelectedHour] = useState(hour);
-  const [selectedMinute, setSelectedMinute] = useState(minute);
+  const [isPopupOpen, setIsPopupOpen] = useState(false);
+  const [selectedHour, setSelectedHour] = useState(defaultHour);
+  const [selectedMinute, setSelectedMinute] = useState(defaultMinute);
+
+  useEffect(() => {
+    setValue(name, `${zeroPadding(defaultHour)}:${zeroPadding(defaultMinute)}`);
+  }, [setValue, name, defaultHour, defaultMinute]);
 
   const setTime = (hour = selectedHour, min = selectedMinute) => {
     setSelectedHour(hour);
     setSelectedMinute(min);
-    setValue(name, `${`0${hour}`.slice(-2)}:${`0${min}`.slice(-2)}`);
+    setValue(name, `${zeroPadding(hour)}:${zeroPadding(min)}`);
+  };
+
+  const handleOnFocus = () => setIsPopupOpen(true);
+  const handleOnKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === "Escape") {
+      setIsPopupOpen(false);
+    }
+  };
+  const handleOnClickButton = () => {
+    setIsPopupOpen(false);
+    setValue(
+      name,
+      `${zeroPadding(selectedHour)}:${zeroPadding(selectedMinute)}`,
+    );
   };
 
   return (
@@ -69,18 +90,11 @@ export const TimePicker = ({
       role="combobox"
       className={`${styles["time-picker"]} ${TIME_PICKER_CLASS}`}
       tabIndex={0}
-      onFocus={() => setIsPopupOpen(true)}
+      onFocus={handleOnFocus}
+      onKeyDown={handleOnKeyDown}
+      style={style}
       {...restProps}
-      onKeyDown={(e) => {
-        if (e.key === "Escape") {
-          setIsPopupOpen(false);
-        }
-      }}
     >
-      <input
-        type="hidden"
-        value={`${`0${selectedHour}`.slice(-2)}:${`0${selectedMinute}`.slice(-2)}`}
-      />
       <div
         role="time"
         className={`${styles.display} ${className}`}
@@ -89,7 +103,7 @@ export const TimePicker = ({
         }}
       >
         <span aria-label="selected hour and minute">
-          {` ${selectedHour}`.slice(-2)}:{`0${selectedMinute}`.slice(-2)}
+          {`${zeroPadding(selectedHour)}:${zeroPadding(selectedMinute)}`}
         </span>
         {showClockIcon && <FaRegClock className={`${styles.icon}`} />}
       </div>
@@ -127,12 +141,8 @@ export const TimePicker = ({
             aria-label="confirm selected hour and minute"
             className={okButtonClassName ? okButtonClassName : styles.okButton}
             tabIndex={0}
-            onClick={() => {
-              setIsPopupOpen(false);
-            }}
-            onBlur={() => {
-              setIsPopupOpen(false);
-            }}
+            onClick={handleOnClickButton}
+            onBlur={handleOnClickButton}
           >
             {okButtonText}
           </button>
@@ -141,6 +151,7 @@ export const TimePicker = ({
     </div>
   );
 };
+
 type PopupProps = PropsWithChildren<{
   setIsPopupOpen: (x: boolean) => void;
   className?: string;
@@ -194,7 +205,7 @@ const Select = ({
   const ref = useRef<HTMLDivElement>(null);
   const selectedRef = useRef<HTMLOptionElement>(null);
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     if (selectedRef.current) {
       selectedRef.current.scrollIntoView({ block: "center" });
     }
@@ -203,38 +214,45 @@ const Select = ({
     }
   }, [selectedRef, getFocus]);
 
+  const handleMouseEnter = () => {
+    if (ref.current) {
+      ref.current.focus();
+    }
+  };
+
+  const handleOnKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === "Up" || e.key === "ArrowUp") {
+      const prevValue = optionValues[optionValues.indexOf(selectedValue) - 1];
+      if (prevValue === undefined) {
+        return;
+      }
+      setSelectedValue(prevValue);
+      return;
+    }
+    if (e.key === "Down" || e.key === "ArrowDown") {
+      const nextValue = optionValues[optionValues.indexOf(selectedValue) + 1];
+      if (nextValue === undefined) {
+        return;
+      }
+      setSelectedValue(nextValue);
+      return;
+    }
+  };
+
+  const handleOnClick = (x: number) => (e: MouseEvent<HTMLOptionElement>) => {
+    e.preventDefault();
+    setSelectedValue(x);
+  };
+
   return (
     <div
       ref={ref}
       role="spinbutton"
       aria-label={name}
       className={`${styles.selector} ${className ? className : ""}`}
-      onMouseEnter={() => {
-        if (ref.current) {
-          ref.current.focus();
-        }
-      }}
       tabIndex={0}
-      onKeyDown={(e) => {
-        if (e.key === "Up" || e.key === "ArrowUp") {
-          const prevValue =
-            optionValues[optionValues.indexOf(selectedValue) - 1];
-          if (prevValue === undefined) {
-            return;
-          }
-          setSelectedValue(prevValue);
-          return;
-        }
-        if (e.key === "Down" || e.key === "ArrowDown") {
-          const nextValue =
-            optionValues[optionValues.indexOf(selectedValue) + 1];
-          if (nextValue === undefined) {
-            return;
-          }
-          setSelectedValue(nextValue);
-          return;
-        }
-      }}
+      onMouseEnter={handleMouseEnter}
+      onKeyDown={handleOnKeyDown}
     >
       {optionValues.map((x) => (
         <option
@@ -244,15 +262,34 @@ const Select = ({
           aria-selected={`${selectedValue === x}`}
           className={`${styles.option} ${selectedValue === x ? (selectedOptionClassName ? selectedOptionClassName : styles["selected-option"]) : ""}`}
           value={x}
-          onClick={(e) => {
-            e.preventDefault();
-            setSelectedValue(x);
-          }}
+          onClick={handleOnClick(x)}
           ref={selectedValue === x ? selectedRef : null}
         >
-          {`0${x}`.slice(-2)}
+          {zeroPadding(x)}
         </option>
       ))}
     </div>
   );
 };
+
+function zeroPadding(num: number) {
+  return `0${num}`.slice(-2);
+}
+
+function calcDefaultHour(hour: number, hourRange: number[]) {
+  if (hourRange.includes(hour)) {
+    return hour;
+  }
+  // minmax
+  if (hour < hourRange[0]) {
+    return hourRange[0];
+  }
+  return hourRange[hourRange.length - 1];
+}
+
+function calcDefaultMinute(minute: number, minStep: number) {
+  if (minStep === 1) {
+    return minute;
+  }
+  return Math.floor(minute / minStep) * minStep;
+}
