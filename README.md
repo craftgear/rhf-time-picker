@@ -3,7 +3,7 @@
 a simple time picker component for react-hook-form
 
 
-[gif](./images/time-picker.gif)
+![gif](./images/time-picker.gif)
 
 
 ## Install
