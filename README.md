@@ -9,7 +9,7 @@ a simple time picker component for react-hook-form
 ## Install
 
 ```bash
-npm i rhf-time-picker
+npm i @craftgear/rhf-time-picker
 ```
 
 ## Usage
