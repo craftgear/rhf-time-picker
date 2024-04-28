@@ -1,15 +1,10 @@
 # rhf-time-picker
 
+a simple time picker component for react-hook-form
 
 
-## TODO
-- [ ] classNameをclsxで結合する
-- [x] デフォルトの時と分がオプションになかった場合どうするか
-- [x] keyup / keydown で数値を変更できるようにする
-- [ ] react-hook-formを入れて実際に試す
-- [x] style={{}} を渡せるようにする
-- [x] wai-ariaに対応する
-- [ ] テストを書く?
+[gif](./images/time-picker.gif)
+
 
 ## Install
 
@@ -21,7 +16,7 @@ npm i rhf-time-picker
 
 ```tsx
 import React from 'react';
-import { useForm  } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { TimePicker } from 'rhf-time-picker';
 
 const App = () => {
@@ -54,14 +49,19 @@ So I resorted to using `setValue` function from `react-hook-form` to set the val
 
 ### Props
 
-### Change Colors
-```tsx
-// change select text color and background color
-<TimePicker
-    ...
-    popupClassName={yourClassName}
-/>
-
-// change
-```
+Name                    | Type                                  | Default   | Desscription
+---                     | ---                                   | ---       | ---
+name                    | string                                |           | **required** name of the input
+setValue                | (name: string, value: string) => void |           | **required** setValue function from `useForm`
+defaultValue            | string                                | undefined | default value of the input
+hourRange               | number[]                              | [0, 23]   | range of hours
+minStep                 | number                                | 5         | step of minutes
+okButtonText            | string                                | 'OK'      | text of the OK button
+showClockIcon           | boolean                               | true      | whether to show the clock icon
+style                   | React.CSSProperties                   | undefined | style of the TimePicker
+className               | string                                | undefined | className of the TimePicker 
+popupClassName          | string                                | undefined | className of the popup
+selectClassName         | string                                | undefined | className of hour and minut select
+okButtonClassName       | string                                | undefined | className of the OK button
+selectedOptionClassName | string                                | undefined | className of the selected hour/minute option
 

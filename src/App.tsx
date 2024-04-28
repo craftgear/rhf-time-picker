@@ -1,12 +1,15 @@
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+
 import "./App.css";
 import { TimePicker } from "../lib/main";
-import { useForm } from "react-hook-form";
 
 function App() {
   const { setValue, handleSubmit } = useForm();
+  const [selectedTime, setSelectedTime] = useState<string>("");
 
   const onSubmit = (data: any) => {
-    console.log(data);
+    setSelectedTime(data.time);
   };
 
   return (
@@ -18,6 +21,7 @@ function App() {
           alignItems: "center",
         }}
       >
+        <div>Selected Time: {selectedTime}</div>
         <TimePicker name="time" setValue={setValue} />
         <button type="submit">Submit</button>
       </div>

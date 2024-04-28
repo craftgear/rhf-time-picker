@@ -81,7 +81,7 @@
   scroll-snap-align: center;
 }
 
-.selector .selected-option {
+.selected-option {
   background-color: var(--blue);
   color: white;
 }

@@ -6,6 +6,7 @@ import {
   KeyboardEvent,
   MouseEvent,
 } from "react";
+import { clsx } from "clsx";
 
 import { FaRegClock } from "react-icons/fa6";
 import styles from "./styles.module.css";
@@ -87,8 +88,8 @@ export const TimePicker = ({
 
   return (
     <div
-      role="combobox"
-      className={`${styles["time-picker"]} ${TIME_PICKER_CLASS}`}
+      role="select"
+      className={clsx(styles["time-picker"], TIME_PICKER_CLASS)}
       tabIndex={0}
       onFocus={handleOnFocus}
       onKeyDown={handleOnKeyDown}
@@ -97,7 +98,7 @@ export const TimePicker = ({
     >
       <div
         role="time"
-        className={`${styles.display} ${className}`}
+        className={clsx(styles.display, className)}
         onClick={() => {
           setIsPopupOpen(true);
         }}
@@ -110,7 +111,7 @@ export const TimePicker = ({
       {isPopupOpen && (
         <Popup
           setIsPopupOpen={setIsPopupOpen}
-          className={`${styles.popup} ${popupClassName}`}
+          className={clsx(styles.popup, popupClassName)}
         >
           <div className={`${styles.selectorWrapper}`}>
             <Select
@@ -139,7 +140,7 @@ export const TimePicker = ({
           <button
             type="button"
             aria-label="confirm selected hour and minute"
-            className={okButtonClassName ? okButtonClassName : styles.okButton}
+            className={clsx(styles.okButton, okButtonClassName)}
             tabIndex={0}
             onClick={handleOnClickButton}
             onBlur={handleOnClickButton}
@@ -176,11 +177,7 @@ const Popup = ({ setIsPopupOpen, className, children }: PopupProps) => {
     };
   }, [setIsPopupOpen]);
 
-  return (
-    <div className={`${styles.popup} ${className ? className : ""}`}>
-      {children}
-    </div>
-  );
+  return <div className={clsx(styles.popup, className)}>{children}</div>;
 };
 
 type SelectorProps = {
@@ -244,12 +241,17 @@ const Select = ({
     setSelectedValue(x);
   };
 
+  const _selectedOptionClassName = clsx(
+    styles["selected-option"],
+    selectedOptionClassName,
+  );
+
   return (
     <div
       ref={ref}
       role="spinbutton"
       aria-label={name}
-      className={`${styles.selector} ${className ? className : ""}`}
+      className={clsx(styles.selector, className)}
       tabIndex={0}
       onMouseEnter={handleMouseEnter}
       onKeyDown={handleOnKeyDown}
@@ -260,7 +262,10 @@ const Select = ({
           role="option"
           aria-label={`${x} ${name}`}
           aria-selected={`${selectedValue === x}`}
-          className={`${styles.option} ${selectedValue === x ? (selectedOptionClassName ? selectedOptionClassName : styles["selected-option"]) : ""}`}
+          className={clsx(
+            styles.option,
+            selectedValue === x && _selectedOptionClassName,
+          )}
           value={x}
           onClick={handleOnClick(x)}
           ref={selectedValue === x ? selectedRef : null}

@@ -1,6 +1,6 @@
 {
   "name": "time-picker",
-  "private": true,
+  "private": false,
   "version": "0.0.0",
   "type": "module",
   "main": "dist/main.js",
@@ -19,6 +19,7 @@
     "prepublishOnly": "npm run build"
   },
   "peerDependencies": {
+    "clsx": "^2.1.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-hook-form": "^7.51.3",
